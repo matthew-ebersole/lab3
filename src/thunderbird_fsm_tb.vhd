@@ -1,5 +1,3 @@
---+----------------------------------------------------------------------------
---| 
 --| COPYRIGHT 2017 United States Air Force Academy All rights reserved.
 --| 
 --| United States Air Force Academy     __  _______ ___    _________ 
@@ -57,28 +55,85 @@ end thunderbird_fsm_tb;
 architecture test_bench of thunderbird_fsm_tb is 
 	
 	component thunderbird_fsm is 
---	  port(
-		
---	  );
+	  port(
+		i_clk, i_reset  : in    std_logic;
+        i_left, i_right : in    std_logic;
+        o_lights_L      : out   std_logic_vector(2 downto 0);
+        o_lights_R      : out   std_logic_vector(2 downto 0)
+	  );
 	end component thunderbird_fsm;
 
 	-- test I/O signals
-	
+	signal w_clk : std_logic:= '0';
+	signal w_reset : std_logic:= '0';
+	signal w_left : std_logic:= '0';
+	signal w_right : std_logic:= '0';
+	signal w_lights_L : std_logic_vector(2 downto 0) := "000"; 
+	signal w_lights_R : std_logic_vector(2 downto 0) := "000"; 
 	-- constants
-	
+	constant k_clk_period : time := 10 ns;
 	
 begin
 	-- PORT MAPS ----------------------------------------
-	
+	uut: thunderbird_fsm port map (
+          i_clk => w_clk,
+          i_reset => w_reset,
+          i_left => w_left,
+          i_right => w_right,
+          o_lights_L => w_lights_L,
+          o_lights_R => w_lights_R
+        );
 	-----------------------------------------------------
 	
 	-- PROCESSES ----------------------------------------	
     -- Clock process ------------------------------------
-    
+    clk_proc : process
+	begin
+		w_clk <= '0';
+        wait for k_clk_period/2;
+		w_clk <= '1';
+		wait for k_clk_period/2;
+	end process;
 	-----------------------------------------------------
 	
 	-- Test Plan Process --------------------------------
-	
+	sim_proc: process
+	begin
+	   w_reset <= '1';
+		wait for k_clk_period*1;
+		  assert w_lights_L = "000" report "bad reset" severity failure;
+		  assert w_lights_R = "000" report "bad reset" severity failure;
+	   w_reset <= '0';
+	   wait for k_clk_period*1;
+	   w_left <= '1';
+	    wait for k_clk_period*1;
+	      assert w_lights_L = "001" report "bad LA" severity failure;
+	    wait for k_clk_period*1;
+	      assert w_lights_L = "011" report "bad LB" severity failure;
+	    wait for k_clk_period*1;
+	      assert w_lights_L = "111" report "bad LC" severity failure;
+	   w_left <= '0';
+	   wait for k_clk_period*1;
+	   w_right <= '1';
+	    wait for k_clk_period*1;
+	      assert w_lights_R = "001" report "bad RA" severity failure;
+	    wait for k_clk_period*1;
+	      assert w_lights_R = "011" report "bad RB" severity failure;
+	    wait for k_clk_period*1;
+	      assert w_lights_R = "111" report "bad RC" severity failure;
+	   w_right <= '0';
+	   wait for k_clk_period*1;
+	   w_right <= '1';
+	   w_left <= '1';
+	    wait for k_clk_period*1;
+	      assert w_lights_R = "111" report "bad hazard on" severity failure;
+	      assert w_lights_L = "111" report "bad hazard on" severity failure;
+	    wait for k_clk_period*1;
+	      assert w_lights_R = "000" report "bad hazard off" severity failure;
+	      assert w_lights_L = "000" report "bad hazard off" severity failure;
+	   w_left <= '0';
+	   w_right <= '0';
+	   end process;
 	-----------------------------------------------------	
 	
 end test_bench;
